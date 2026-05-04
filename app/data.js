@@ -21,7 +21,7 @@ export const users = [
   { 
     nama: "Felix Pardede", size: "L", model: "REGULER", nickname: "-" },
   { 
-    nama: "Florentika", size: "XS", model: "REGULER", nickname: "-" },
+    nama: "Frolentika", size: "XS", model: "REGULER", nickname: "-" },
   { 
     nama: "Gazent Chenio", size: "L", model: "REGULER", nickname: "-" },
   { 

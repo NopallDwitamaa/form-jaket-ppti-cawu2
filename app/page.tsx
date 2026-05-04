@@ -1,14 +1,17 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { users } from "./data";
+import { users as dummyUsers } from "./data";
+import { supabase } from "@/lib/supabase";
 
 type User = {
+  id: string;
   nama: string;
   size: string;
   model: string;
   nickname: string;
   updated?: boolean;
+  paid?: boolean;
 };
 
 type Toast = {
@@ -21,6 +24,7 @@ export default function Home() {
 
   const [selected, setSelected] = useState<string>("");
   const [toast, setToast] = useState<Toast | null>(null);
+  const [users, setUsers] = useState<User[]>([]);
 
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -28,6 +32,28 @@ export default function Home() {
 
   const ref = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const fetchUsersFromDB = async () => {
+    const { data, error } = await supabase
+      .from("users")
+      .select("*")
+      .eq("status", "available")
+      .order("urutan", { ascending: true, nullsFirst: false });
+
+    if (!error && data) {
+      setUsers(data);
+    } else {
+      setUsers(dummyUsers);
+    }
+  };
+
+  useEffect(() => {
+    const load = async () => {
+      await fetchUsersFromDB();
+    };
+
+    load();
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -38,8 +64,7 @@ export default function Home() {
     };
 
     document.addEventListener("mousedown", handleClickOutside);
-    return () =>
-      document.removeEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   useEffect(() => {
@@ -49,26 +74,27 @@ export default function Home() {
   }, [open]);
 
   const filteredUsers = users.filter((u: User) =>
-    u.nama.toLowerCase().includes(search.toLowerCase())
+    u.nama.toLowerCase().includes(search.toLowerCase()),
   );
 
   const handleNext = () => {
-    if (!selected) {
-      setToast({
-        type: "error",
-        message: "Pilih nama dulu!",
-      });
+  if (!selected) {
+    setToast({
+      type: "error",
+      message: "Pilih nama dulu!",
+    });
 
-      setTimeout(() => setToast(null), 3000);
-      return;
-    }
+    setTimeout(() => setToast(null), 3000);
+    return;
+  }
 
-    const user = users.find((u: User) => u.nama === selected);
-    if (!user) return;
+  const user = users.find((u: User) => u.nama === selected);
+  if (!user) return;
 
-    localStorage.setItem("user", JSON.stringify(user));
-    router.push("/dashboard");
-  };
+  localStorage.setItem("user", JSON.stringify(user));
+
+  router.push("/dashboard");
+};
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (!open) return;
@@ -76,7 +102,7 @@ export default function Home() {
     if (e.key === "ArrowDown") {
       e.preventDefault();
       setActiveIndex((prev) =>
-        prev < filteredUsers.length - 1 ? prev + 1 : prev
+        prev < filteredUsers.length - 1 ? prev + 1 : prev,
       );
     }
 
@@ -109,18 +135,18 @@ export default function Home() {
         </span>
       ) : (
         part
-      )
+      ),
     );
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-100 via-indigo-100 to-purple-200 flex items-center justify-center p-6">
-
       <div className="relative z-10 w-full max-w-md">
-        <div className="bg-white/80 backdrop-blur-xl p-8 rounded-3xl 
+        <div
+          className="bg-white/80 backdrop-blur-xl p-8 rounded-3xl 
         shadow-[0_20px_60px_-10px_rgba(0,0,0,0.25)] 
-        transition hover:scale-[1.02] border border-white/40">
-
+        transition hover:scale-[1.02] border border-white/40"
+        >
           <h1 className="text-2xl text-gray-800 font-semibold text-center mb-2">
             Form Verifikasi Jacket
           </h1>
@@ -133,13 +159,7 @@ export default function Home() {
             Pilih Nama
           </label>
 
-          <div
-            ref={ref}
-            className="relative mt-2"
-            onKeyDown={handleKeyDown}
-          >
-
-            {/* INPUT */}
+          <div ref={ref} className="relative mt-2" onKeyDown={handleKeyDown}>
             <div
               onClick={() => setOpen(!open)}
               className="w-full p-3 rounded-xl bg-white/70 text-gray-800 cursor-pointer 
@@ -148,21 +168,22 @@ export default function Home() {
               flex justify-between items-center transition"
             >
               {selected || "-- Pilih Nama --"}
-              <span className={`text-gray-400 transition ${open ? "rotate-180" : ""}`}>
+              <span
+                className={`text-gray-400 transition ${open ? "rotate-180" : ""}`}
+              >
                 ▼
               </span>
             </div>
 
-            {/* DROPDOWN */}
             {open && (
-              <div className="absolute z-50 w-full mt-2 
+              <div
+                className="absolute z-50 w-full mt-2 
               bg-white/70 backdrop-blur-xl 
               border border-white/40 
               rounded-2xl 
               shadow-[0_20px_50px_rgba(0,0,0,0.15)] 
-              overflow-hidden animate-fadeIn">
-
-                {/* SEARCH */}
+              overflow-hidden animate-fadeIn"
+              >
                 <input
                   ref={inputRef}
                   type="text"
@@ -175,7 +196,6 @@ export default function Home() {
                   className="w-full px-4 py-3 border-b border-white/40 outline-none text-gray-700 bg-transparent placeholder-gray-400"
                 />
 
-                {/* LIST */}
                 <div className="max-h-48 overflow-y-auto p-1">
                   {filteredUsers.map((u: User, i: number) => (
                     <div
@@ -191,8 +211,8 @@ export default function Home() {
                         i === activeIndex
                           ? "bg-indigo-500 text-white"
                           : selected === u.nama
-                          ? "bg-indigo-100 text-indigo-700"
-                          : "hover:bg-white/60 text-gray-800"
+                            ? "bg-indigo-100 text-indigo-700"
+                            : "hover:bg-white/60 text-gray-800"
                       }`}
                     >
                       {highlightText(u.nama)}
