@@ -5,7 +5,7 @@ import { users as dummyUsers } from "./data";
 import { supabase } from "@/lib/supabase";
 
 type User = {
-  id: string;
+  id?: string;
   nama: string;
   size: string;
   model: string;
