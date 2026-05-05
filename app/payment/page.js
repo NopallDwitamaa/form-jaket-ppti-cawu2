@@ -98,6 +98,7 @@ export default function Payment() {
 
       const { error } = await supabase.from("orders").insert([
         {
+          user_id: user.id,
           nama: user.nama,
           nickname: user.nickname,
           size: user.size,
@@ -109,10 +110,18 @@ export default function Payment() {
 
       if (error) throw error;
 
-      await supabase
-        .from("users")
-        .update({ status: "pending" })
-        .eq("id", user.id);
+      const { data: existing } = await supabase
+        .from("orders")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("status", "pending");
+
+      if (existing && existing.length > 0) {
+        await supabase
+          .from("users")
+          .update({ status: "pending" })
+          .eq("id", user.id);
+      }
 
       if (file.size > 1024 * 1024) {
         setToast({
